@@ -11,6 +11,9 @@ class App {
         if (this.initialized) return;
         this.initialized = true;
 
+        // 渲染构建信息（报告版本 / 数据更新时间，镜像构建期注入）
+        this.renderBuildInfo();
+
         // 初始化组件
         window.componentRenderer.init();
 
@@ -25,6 +28,21 @@ class App {
         window.addEventListener('scroll', this.handleScroll.bind(this));
 
         console.log('🚀 Dashboard initialized successfully');
+    }
+
+    // 渲染构建信息：优先使用构建期注入的 window.__BUILD_INFO__，
+    // 本地直接打开页面时使用 js/build-info.js 中的默认值
+    renderBuildInfo() {
+        const info = window.__BUILD_INFO__ || {};
+        const versionEl = document.getElementById('reportVersion');
+        const dateEl = document.getElementById('dataUpdatedAt');
+
+        if (versionEl && info.reportVersion) {
+            versionEl.textContent = info.reportVersion;
+        }
+        if (dateEl && info.dataUpdatedAt) {
+            dateEl.textContent = info.dataUpdatedAt;
+        }
     }
 
     handleResize() {

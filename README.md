@@ -3,8 +3,11 @@
 ## How to Run
 
 ```bash
-# Docker 一键启动
+# Docker 一键启动（构建参数带默认值，可直接运行）
 docker-compose up --build -d
+
+# 指定报告版本与数据更新时间（构建期注入前端页脚展示）
+REPORT_VERSION=1.0.0 DATA_UPDATED_AT=2026-09-21 docker-compose up --build -d
 
 # 查看运行状态
 docker-compose ps
@@ -12,6 +15,37 @@ docker-compose ps
 # 停止服务
 docker-compose down
 ```
+
+不使用 Docker 时，直接用浏览器打开 `frontend-user/index.html` 即可，
+页面结构、样式与行为同容器内一致（构建信息显示本地默认值）。
+
+## 镜像构建
+
+### 构建参数（必填）
+
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| `REPORT_VERSION` | 报告版本，构建期注入页脚展示 | `1.0.0` |
+| `DATA_UPDATED_AT` | 数据更新时间（`YYYY-MM-DD`），构建期注入页脚展示 | `2026-09-21` |
+
+参数缺失或格式错误时构建会明确报错并停止；`docker-compose` 已提供默认值。
+
+### 跨平台构建（ARM + X86）
+
+```bash
+# 本地单架构构建（自动识别当前机器架构）
+REPORT_VERSION=1.0.0 DATA_UPDATED_AT=2026-09-21 ./scripts/build.sh
+
+# 多架构构建并推送镜像仓库（linux/amd64 + linux/arm64）
+REPORT_VERSION=1.0.0 DATA_UPDATED_AT=2026-09-21 \
+    PUSH=true REGISTRY=registry.example.com/apps ./scripts/build.sh
+```
+
+脚本行为：
+
+- 基础镜像（`nginx:1.27.4-alpine`，固定版本）拉取超时或失败会明确报错并停止（超时时间可通过 `PULL_TIMEOUT` 调整，默认 300s）
+- 相同构建参数在 ARM 与 X86 上可重复构建出内容一致的镜像（静态文件原样复制，构建上下文经 `.dockerignore` 清理，无时间戳等不确定输入）
+- 镜像统一暴露 80 端口，以 `nginx -g 'daemon off;'` 前台启动；构建信息固化在镜像内，容器重启后页面行为不变
 
 ## Services
 
@@ -177,7 +211,13 @@ TARGET_INDUSTRY = "消费零售 (Retail/FMCG/DTC)"
 ```
 ├── frontend-user/          # 前端展示页面
 │   ├── index.html          # 单文件 HTML 应用
-│   └── Dockerfile          # Docker 构建文件
+│   ├── css/                # 样式文件
+│   ├── js/                 # 脚本文件（build-info.js 为构建信息，镜像构建时被覆盖）
+│   ├── nginx.conf          # 容器内静态服务配置
+│   ├── .dockerignore       # 构建上下文清理
+│   └── Dockerfile          # Docker 构建文件（多架构，构建期注入版本信息）
+├── scripts/
+│   └── build.sh            # 镜像构建脚本（参数校验 / 拉取超时控制 / 跨平台构建）
 ├── docker-compose.yml      # Docker 编排配置
 ├── .gitignore              # Git 忽略文件
 └── README.md               # 项目说明

@@ -1,0 +1,14 @@
+# 构建上下文清理：仅保留运行所需的静态资源与配置
+# 保证构建上下文干净、可重复
+
+.git
+.gitignore
+.dockerignore
+Dockerfile
+
+# 文档与本地开发文件
+*.md
+node_modules
+logs
+*.log
+.DS_Store
