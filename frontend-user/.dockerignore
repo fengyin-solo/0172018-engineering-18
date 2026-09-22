@@ -1,0 +1,20 @@
+# 构建上下文精简：镜像仅需要 index.html / css / js / nginx/default.conf
+# 其余文件一律不进入构建上下文，保证构建可重复
+
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose*.yml
+*.md
+
+# 本地依赖目录：镜像内依赖由 deps 构建阶段统一下载并校验
+vendor/
+
+# 本地开发辅助脚本
+scripts/
+
+# 杂项
+node_modules/
+*.log
+.DS_Store

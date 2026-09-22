@@ -21,6 +21,58 @@ docker-compose down
 
 访问地址：http://localhost:8081
 
+## 本地直接打开
+
+无需构建，直接用浏览器打开 `frontend-user/index.html` 即可，页面行为与容器内完全一致
+（ECharts 等前端依赖已固化在 `frontend-user/vendor/`，不依赖外部 CDN）。
+
+如需重新拉取/校验本地依赖（与镜像构建使用同一版本与 SHA-256 校验）：
+
+```bash
+./frontend-user/scripts/fetch-deps.sh
+```
+
+## 构建参数（构建期注入前端展示）
+
+| 构建参数 | 说明 | 默认值 |
+|----------|------|--------|
+| `REPORT_VERSION` | 报告版本，展示在页脚 | `1.0.0` |
+| `DATA_UPDATED_AT` | 数据更新时间，展示在页脚 | `2026-02-05` |
+
+```bash
+# 通过环境变量覆盖（docker-compose）
+REPORT_VERSION=1.1.0 DATA_UPDATED_AT=2026-09-22 docker-compose up --build -d
+
+# 或直接使用 docker build（两个参数均为必填，缺失会报错并终止构建）
+docker build \
+  --build-arg REPORT_VERSION=1.1.0 \
+  --build-arg DATA_UPDATED_AT=2026-09-22 \
+  -t jiabei-dashboard:latest ./frontend-user
+```
+
+## 跨平台构建（ARM / X86）
+
+镜像为多阶段构建：依赖拉取阶段在构建机平台执行（产物为平台无关静态文件），
+运行时阶段面向目标平台，同一构建参数在 ARM 与 X86 上产出内容一致的镜像。
+
+```bash
+# AMD64 + ARM64 多架构构建并推送
+docker buildx build --platform linux/amd64,linux/arm64 \
+  --build-arg REPORT_VERSION=1.1.0 \
+  --build-arg DATA_UPDATED_AT=2026-09-22 \
+  -t <registry>/jiabei-dashboard:1.1.0 --push ./frontend-user
+```
+
+## 构建可靠性与失败行为
+
+- **依赖固化**：ECharts 固定 `5.4.3`，构建期下载并做 SHA-256 完整性校验，重复构建产物一致。
+- **明确报错**：依赖拉取超时（重试 3 次、双镜像源兜底后仍失败）、校验和不匹配、
+  或 `REPORT_VERSION` / `DATA_UPDATED_AT` 缺失/含非法字符时，构建立即失败并输出明确错误。
+- **静态文件清理**：`.dockerignore` 精简构建上下文，镜像内清理 Nginx 默认站点文件。
+- **依赖缓存**：依赖拉取为独立构建阶段，仅版本号变化时重新下载；静态文件变更不影响依赖层缓存。
+- **运行一致**：容器暴露端口 `80`（宿主机映射 `8081`），`nginx -g "daemon off;"` 启动，
+  内置健康检查；页面全部资源由容器本地提供，重启后行为与本机一致。
+
 ## 测试账号
 
 本项目为纯前端静态页面，无需登录账号。
@@ -175,10 +227,16 @@ TARGET_INDUSTRY = "消费零售 (Retail/FMCG/DTC)"
 ### 项目结构
 
 ```
-├── frontend-user/          # 前端展示页面
-│   ├── index.html          # 单文件 HTML 应用
-│   └── Dockerfile          # Docker 构建文件
-├── docker-compose.yml      # Docker 编排配置
-├── .gitignore              # Git 忽略文件
-└── README.md               # 项目说明
+├── frontend-user/             # 前端展示页面
+│   ├── index.html             # 单页应用入口（本地直接打开即可）
+│   ├── css/                   # 样式文件
+│   ├── js/                    # 业务脚本（含 build-info.js 构建信息）
+│   ├── vendor/                # 前端依赖（ECharts 固定版本，本地打开/容器共用）
+│   ├── nginx/default.conf     # 容器内 Nginx 站点配置
+│   ├── scripts/fetch-deps.sh  # 本地依赖拉取脚本（与镜像构建同一版本与校验）
+│   ├── .dockerignore          # 构建上下文精简
+│   └── Dockerfile             # 多阶段构建（依赖拉取校验 + 运行时）
+├── docker-compose.yml         # Docker 编排配置
+├── .gitignore                 # Git 忽略文件
+└── README.md                  # 项目说明
 ```

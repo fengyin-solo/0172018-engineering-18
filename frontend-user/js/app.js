@@ -11,6 +11,9 @@ class App {
         if (this.initialized) return;
         this.initialized = true;
 
+        // 应用构建期注入的版本信息（报告版本 / 数据更新时间）
+        this.applyBuildInfo();
+
         // 初始化组件
         window.componentRenderer.init();
 
@@ -25,6 +28,20 @@ class App {
         window.addEventListener('scroll', this.handleScroll.bind(this));
 
         console.log('🚀 Dashboard initialized successfully');
+    }
+
+    // 将构建期注入的版本信息渲染到页脚（缺失时保留 HTML 默认值）
+    applyBuildInfo() {
+        const info = window.BUILD_INFO || {};
+        const versionEl = document.getElementById('reportVersion');
+        const updatedEl = document.getElementById('dataUpdatedAt');
+
+        if (versionEl && info.reportVersion) {
+            versionEl.textContent = info.reportVersion;
+        }
+        if (updatedEl && info.dataUpdatedAt) {
+            updatedEl.textContent = info.dataUpdatedAt;
+        }
     }
 
     handleResize() {

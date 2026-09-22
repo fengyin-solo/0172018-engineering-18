@@ -3,6 +3,11 @@ services:
     build:
       context: ./frontend-user
       dockerfile: Dockerfile
+      args:
+        # 构建期注入前端的报告版本与数据更新时间（可用环境变量覆盖）
+        REPORT_VERSION: ${REPORT_VERSION:-1.0.0}
+        DATA_UPDATED_AT: ${DATA_UPDATED_AT:-2026-02-05}
+    image: jiabei-dashboard:latest
     container_name: jiabei-dashboard
     ports:
       - "8081:80"

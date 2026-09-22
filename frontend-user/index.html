@@ -7,11 +7,8 @@
     <meta name="theme-color" content="#0a0a0f">
     <title>佳贝艾特 - 会员体系与私域运营全景诊断驾驶舱</title>
     
-    <!-- 预加载关键资源 -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    
-    <!-- ECharts -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- ECharts（本地静态依赖，构建期统一下载并校验，本地打开与容器访问行为一致） -->
+    <script src="vendor/echarts.min.js"></script>
     
     <!-- 样式文件 -->
     <link rel="stylesheet" href="css/variables.css">
@@ -112,12 +109,13 @@
         
         <!-- 页脚 -->
         <footer class="footer" style="text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px;">
-            <p>© 2026 佳贝艾特 会员运营诊断系统 | 数据更新时间: 2026-02-05</p>
+            <p>© 2026 佳贝艾特 会员运营诊断系统 | 报告版本: <span id="reportVersion">1.0.0</span> | 数据更新时间: <span id="dataUpdatedAt">2026-02-05</span></p>
         </footer>
         
     </div>
     
     <!-- JavaScript 文件 -->
+    <script src="js/build-info.js"></script>
     <script src="js/toast.js"></script>
     <script src="js/data.js"></script>
     <script src="js/charts.js"></script>
